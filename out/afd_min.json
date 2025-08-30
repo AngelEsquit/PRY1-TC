@@ -1,0 +1,29 @@
+{
+  "ESTADOS": [
+    0,
+    1,
+    2
+  ],
+  "SIMBOLOS": [
+    "a",
+    "b"
+  ],
+  "INICIO": [
+    0
+  ],
+  "ACEPTACION": [
+    2
+  ],
+  "TRANSICIONES": [
+    [
+      0,
+      "a",
+      1
+    ],
+    [
+      1,
+      "b",
+      2
+    ]
+  ]
+}
