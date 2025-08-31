@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Tuple
-from automaton import Automaton, EPSILON
+from .automaton import Automaton, EPSILON
 
 @dataclass
 class Fragment:

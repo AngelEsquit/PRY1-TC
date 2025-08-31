@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Dict, Set, FrozenSet, List
-from automaton import Automaton
+from .automaton import Automaton
 
 # Minimización de Hopcroft para DFA
 

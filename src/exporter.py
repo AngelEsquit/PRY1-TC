@@ -1,6 +1,6 @@
 from __future__ import annotations
 import json
-from automaton import Automaton
+from .automaton import Automaton
 
 # Exporta el autómata en el formato de especificación textual (como JSON)
 
