@@ -1,8 +1,8 @@
 from __future__ import annotations
 import json
+import subprocess
+from pathlib import Path
 from .automaton import Automaton
-
-# Exporta el autómata en el formato de especificación textual (como JSON)
 
 def automaton_to_dict(a: Automaton) -> dict:
     norm = a.relabel_sequential()
@@ -26,4 +26,28 @@ def export_json(a: Automaton, path: str) -> None:
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-__all__ = ["export_json", "automaton_to_dict"]
+
+def export_dot(a: Automaton, path: str) -> None:
+    dot_content = a.to_dot()
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(dot_content)
+
+
+def export_image(a: Automaton, path: str, format: str = "png") -> bool:
+    dot_content = a.to_dot()
+    dot_content_safe = dot_content.replace("ε", "epsilon")
+    try:
+        result = subprocess.run(
+            ["dot", f"-T{format}", "-o", path],
+            input=dot_content_safe,
+            text=True,
+            capture_output=True,
+            check=True,
+            encoding='utf-8'
+        )
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+
+__all__ = ["export_json", "automaton_to_dict", "export_dot", "export_image"]

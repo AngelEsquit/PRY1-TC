@@ -26,6 +26,8 @@ def postfix_to_nfa(postfix: str) -> Automaton:
 
     for ch in postfix:
         if ch == '*':
+            if not stack:
+                raise ValueError("Error en postfix: operador * sin operando")
             frag = stack.pop()
             start = _new_state(counter)
             end = _new_state(counter)
@@ -40,6 +42,8 @@ def postfix_to_nfa(postfix: str) -> Automaton:
                 nfa.add_transition(a, EPSILON, end)
             stack.append(Fragment(start, [end]))
         elif ch == '+':
+            if not stack:
+                raise ValueError("Error en postfix: operador + sin operando")
             frag = stack.pop()
             # A+ = AA*
             # Creamos estrella sobre copia
@@ -57,6 +61,8 @@ def postfix_to_nfa(postfix: str) -> Automaton:
                 nfa.add_transition(a, EPSILON, end)
             stack.append(Fragment(start, [end]))
         elif ch == '.':
+            if len(stack) < 2:
+                raise ValueError("Error en postfix: operador . requiere dos operandos")
             frag2 = stack.pop()
             frag1 = stack.pop()
             # conectar aceptaciones de frag1 con inicio de frag2
@@ -64,6 +70,8 @@ def postfix_to_nfa(postfix: str) -> Automaton:
                 nfa.add_transition(a, EPSILON, frag2.start)
             stack.append(Fragment(frag1.start, frag2.accepts))
         elif ch == '|':
+            if len(stack) < 2:
+                raise ValueError("Error en postfix: operador | requiere dos operandos")
             frag2 = stack.pop()
             frag1 = stack.pop()
             start = _new_state(counter)
@@ -90,7 +98,7 @@ def postfix_to_nfa(postfix: str) -> Automaton:
             stack.append(Fragment(start, [end]))
 
     if len(stack) != 1:
-        raise ValueError("Regex postfix inválida (pila final != 1)")
+        raise ValueError("Regex postfix no valido (pila final != 1)")
 
     frag = stack.pop()
     # Ajustar estados inicial y de aceptación

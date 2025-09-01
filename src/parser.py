@@ -13,9 +13,14 @@ EPSILON_SYMBOLS = {"ε", "e"}  # se normaliza a "ε"
 
 
 def to_postfix(regex: str) -> str:
-    # Limpia espacios
+    if not regex:
+        raise ValueError("Regex vacía")
+    
+    for char in regex:
+        if not (char.isalnum() or char in "|*+()εe "):
+            raise ValueError(f"Caracter no valido: '{char}'")
+    
     regex = regex.replace(" ", "")
-    # Inserta operador de concatenación explícito
     tokens: List[str] = []
     i = 0
     while i < len(regex):
@@ -29,9 +34,8 @@ def to_postfix(regex: str) -> str:
         augmented.append(t)
         if idx < len(tokens) - 1:
             a, b = t, tokens[idx + 1]
-            if (a not in {"|", "("} and b not in {"|", ")", "*", "+"}):
-                augmented.append(".")
-            if (a in {"*", "+", ")"} and b not in {"|", ")", "*", "+"}):
+            if ((a not in {"|", "(", ")", "*", "+"} and b not in {"|", ")", "*", "+"}) or
+                (a in {"*", "+", ")"} and b not in {"|", ")", "*", "+"})):
                 augmented.append(".")
     # Shunting Yard
     stack: List[str] = []
@@ -42,7 +46,7 @@ def to_postfix(regex: str) -> str:
             while stack and stack[-1] != "(":
                 output.append(stack.pop())
             if not stack:
-                raise ValueError("Paréntesis desbalanceados")
+                raise ValueError("Parentesis desbalanceados: ')' sin '(' correspondiente")
             stack.pop()
         elif t in PRECEDENCE:
             while stack and stack[-1] != "(" and (
@@ -61,8 +65,13 @@ def to_postfix(regex: str) -> str:
     while stack:
         op = stack.pop()
         if op in {"(", ")"}:
-            raise ValueError("Paréntesis desbalanceados al final")
+            raise ValueError("Parentesis desbalanceados: '(' sin ')' correspondiente")
         output.append(op)
-    return "".join(output)
+    
+    result = "".join(output)
+    if not result:
+        raise ValueError("Regex inválida: resultado vacio")
+    
+    return result
 
 __all__ = ["to_postfix"]
