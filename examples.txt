@@ -1,0 +1,20 @@
+# Archivo de ejemplo con múltiples expresiones regulares
+# Una regex por línea, líneas que empiezan con # son comentarios
+
+# Regex básicas
+a*
+b+
+a|b
+
+# Regex con agrupación
+(a|b)*
+(ab)+
+
+# Regex más complejas
+(a|b)*abb
+a*b*c*
+(a+b+|c)*
+
+# Regex con operadores avanzados
+a?b+
+(ab)?c*

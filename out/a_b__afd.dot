@@ -1,0 +1,17 @@
+digraph Automaton {
+rankdir=LR;
+bgcolor=white;
+node [fontname="Arial", fontsize=12];
+edge [fontname="Arial", fontsize=10];
+
+__start__ [shape=point, width=0.1, height=0.1];
+q0 [shape=circle, style=filled, fillcolor="lightgreen", fontcolor="darkgreen", penwidth=2];
+q1 [shape=circle, style=filled, fillcolor="lightblue", fontcolor="darkblue", penwidth=2];
+q2 [shape=doublecircle, style=filled, fillcolor="lightcoral", fontcolor="darkred", penwidth=2];
+__start__ -> q0 [penwidth=2, color=green];
+
+q1 -> q2 [label="b", color=black];
+q0 -> q1 [label="a", color=black];
+q0 -> q2 [label="b", color=black];
+q2 -> q2 [label="b", color=black];
+}

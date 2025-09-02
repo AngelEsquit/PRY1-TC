@@ -1,0 +1,23 @@
+digraph Automaton {
+rankdir=LR;
+__start__ [shape=point];
+s0 [shape=circle];
+s1 [shape=circle];
+s2 [shape=circle];
+s3 [shape=circle];
+s4 [shape=circle];
+s5 [shape=circle];
+s6 [shape=circle];
+s7 [shape=doublecircle];
+__start__ -> s6;
+s0 -> s1 [label="a"]; 
+s1 -> s5 [label="ε"]; 
+s2 -> s3 [label="b"]; 
+s3 -> s5 [label="ε"]; 
+s4 -> s0 [label="ε"]; 
+s4 -> s2 [label="ε"]; 
+s5 -> s4 [label="ε"]; 
+s5 -> s7 [label="ε"]; 
+s6 -> s4 [label="ε"]; 
+s6 -> s7 [label="ε"]; 
+}

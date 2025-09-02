@@ -60,6 +60,24 @@ def postfix_to_nfa(postfix: str) -> Automaton:
                 nfa.add_transition(a, EPSILON, frag.start)
                 nfa.add_transition(a, EPSILON, end)
             stack.append(Fragment(start, [end]))
+        elif ch == '?':
+            if not stack:
+                raise ValueError("Error en postfix: operador ? sin operando")
+            frag = stack.pop()
+            start = _new_state(counter)
+            end = _new_state(counter)
+            nfa.add_state(start)
+            nfa.add_state(end)
+            
+            # Epsilon directo al final (omitir)
+            nfa.add_transition(start, EPSILON, end)
+            # Epsilon al inicio del fragmento (ejecutar)
+            nfa.add_transition(start, EPSILON, frag.start)
+            # De las aceptaciones al final
+            for a in frag.accepts:
+                nfa.add_transition(a, EPSILON, end)
+            
+            stack.append(Fragment(start, [end]))
         elif ch == '.':
             if len(stack) < 2:
                 raise ValueError("Error en postfix: operador . requiere dos operandos")

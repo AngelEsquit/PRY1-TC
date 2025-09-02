@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Set, Dict, Optional, Iterable, FrozenSet, List, Tuple
+from functools import lru_cache
 
 # Definimos un símbolo especial para epsilon
 EPSILON = "ε"
@@ -15,6 +16,11 @@ class Automaton:
     - initial: estado inicial.
     - accepts: conjunto de estados de aceptación.
     - alphabet: símbolos distintos de EPSILON.
+    
+    Optimizaciones:
+    - Cache para clausura epsilon
+    - Sets para operaciones eficientes
+    - Validaciones mínimas en operaciones críticas
     """
 
     states: Set[str] = field(default_factory=set)
@@ -22,9 +28,18 @@ class Automaton:
     transitions: Dict[str, Dict[str, Set[str]]] = field(default_factory=dict)
     initial: Optional[str] = None
     accepts: Set[str] = field(default_factory=set)
+    _epsilon_cache: Dict[str, Set[str]] = field(default_factory=dict, init=False, repr=False)
 
     # ---------------- Construcción básica -----------------
     def add_state(self, name: str, *, accept: bool = False, initial: bool = False) -> None:
+        """
+        Añade un estado al autómata de forma optimizada.
+        
+        Args:
+            name: Nombre del estado
+            accept: Si es estado de aceptación
+            initial: Si es estado inicial
+        """
         if name in self.states:
             # Permitir idempotencia
             if accept:
@@ -32,35 +47,83 @@ class Automaton:
             if initial:
                 self.initial = name
             return
+            
         self.states.add(name)
-        self.transitions.setdefault(name, {})
+        self.transitions[name] = {}  # Inicializar directamente
+        
         if accept:
             self.accepts.add(name)
         if initial:
             self.initial = name
+        
+        # Invalidar cache al añadir estado
+        self._epsilon_cache.clear()
 
     def add_transition(self, src: str, symbol: str, dest: str) -> None:
-        if src not in self.states or dest not in self.states:
-            raise ValueError("Estado inexistente en la transición")
+        """
+        Añade una transición al autómata de forma optimizada.
+        
+        Args:
+            src: Estado origen
+            symbol: Símbolo de transición
+            dest: Estado destino
+        """
+        # Validación mínima para rendimiento
+        if __debug__:  # Solo en modo debug
+            if src not in self.states or dest not in self.states:
+                raise ValueError(f"Estado inexistente en la transición: {src} -> {dest}")
+        
         if symbol != EPSILON:
             self.alphabet.add(symbol)
+            
+        # Usar setdefault es más eficiente que verificar existencia
         bucket = self.transitions[src].setdefault(symbol, set())
         bucket.add(dest)
+        
+        # Invalidar cache si es transición epsilon
+        if symbol == EPSILON:
+            self._epsilon_cache.clear()
 
-    # ---------------- Consultas -----------------
+    # ---------------- Consultas optimizadas -----------------
     def get_transitions(self, state: str, symbol: str) -> Set[str]:
-        return set(self.transitions.get(state, {}).get(symbol, set()))
+        """Obtiene transiciones de forma optimizada usando get()"""
+        return self.transitions.get(state, {}).get(symbol, set()).copy()
 
     def epsilon_closure(self, states: Iterable[str]) -> Set[str]:
-        """Devuelve la ε-clausura de un conjunto de estados."""
-        stack = list(states)
-        closure = set(states)
+        """
+        Devuelve la ε-clausura de un conjunto de estados de forma optimizada.
+        Usa cache para estados individuales.
+        """
+        if isinstance(states, str):
+            # Caso especial para un solo estado
+            return self._epsilon_closure_single(states)
+        
+        # Para múltiples estados, combinar resultados
+        result = set()
+        for state in states:
+            result.update(self._epsilon_closure_single(state))
+        return result
+    
+    def _epsilon_closure_single(self, state: str) -> Set[str]:
+        """Clausura epsilon optimizada para un solo estado con cache"""
+        if state in self._epsilon_cache:
+            return self._epsilon_cache[state].copy()
+        
+        closure = {state}
+        stack = [state]
+        
         while stack:
-            s = stack.pop()
-            for nxt in self.transitions.get(s, {}).get(EPSILON, set()):
-                if nxt not in closure:
-                    closure.add(nxt)
-                    stack.append(nxt)
+            current = stack.pop()
+            epsilon_transitions = self.transitions.get(current, {}).get(EPSILON, set())
+            
+            for next_state in epsilon_transitions:
+                if next_state not in closure:
+                    closure.add(next_state)
+                    stack.append(next_state)
+        
+        # Cache el resultado
+        self._epsilon_cache[state] = closure.copy()
+        return closure
         return closure
 
     # ---------------- Simulación -----------------
@@ -209,7 +272,31 @@ class Automaton:
                 self.transitions.pop(s, None)
                 self.accepts.discard(s)
 
+    def is_dfa(self) -> bool:
+        """
+        Verifica si el autómata es determinista.
+        
+        Returns:
+            True si es un DFA válido
+        """
+        if self.initial is None:
+            return False
+            
+        # Verificar que no hay transiciones epsilon
+        for state_transitions in self.transitions.values():
+            if EPSILON in state_transitions:
+                return False
+        
+        # Verificar que cada estado tiene máximo una transición por símbolo
+        for state_transitions in self.transitions.values():
+            for destinations in state_transitions.values():
+                if len(destinations) > 1:
+                    return False
+        
+        return True
+
     def to_dot(self, name: str = "Automaton") -> str:
+        """Genera representación DOT básica del autómata"""
         lines = [f"digraph {name} {{", "rankdir=LR;"]
         # Estado ficticio para flecha inicial
         if self.initial is not None:
@@ -226,5 +313,87 @@ class Automaton:
                     lines.append(f"{src} -> {dst} [label=\"{label}\"]; ")
         lines.append("}")
         return "\n".join(lines)
+
+    def to_dot_enhanced(self, name: str = "Automaton") -> str:
+        """
+        Genera representación DOT mejorada con estilos y colores.
+        
+        Args:
+            name: Nombre del grafo
+            
+        Returns:
+            Código DOT con estilos mejorados
+        """
+        lines = [
+            f"digraph {name} {{",
+            "rankdir=LR;",
+            "bgcolor=white;",
+            "node [fontname=\"Arial\", fontsize=12];",
+            "edge [fontname=\"Arial\", fontsize=10];",
+            ""
+        ]
+        
+        # Estado ficticio para flecha inicial con estilo
+        if self.initial is not None:
+            lines.append("__start__ [shape=point, width=0.1, height=0.1];")
+        
+        # Estados con colores y estilos
+        for s in sorted(self.states):
+            is_initial = (s == self.initial)
+            is_accept = (s in self.accepts)
+            
+            if is_accept:
+                shape = "doublecircle"
+                color = "lightcoral"
+                fontcolor = "darkred"
+            else:
+                shape = "circle"
+                color = "lightblue"
+                fontcolor = "darkblue"
+            
+            if is_initial:
+                color = "lightgreen"
+                fontcolor = "darkgreen"
+                if is_accept:
+                    color = "gold"
+                    fontcolor = "darkorange"
+            
+            lines.append(
+                f'{s} [shape={shape}, style=filled, fillcolor="{color}", '
+                f'fontcolor="{fontcolor}", penwidth=2];'
+            )
+        
+        # Flecha inicial con estilo
+        if self.initial is not None:
+            lines.append(f"__start__ -> {self.initial} [penwidth=2, color=green];")
+        
+        lines.append("")
+        
+        # Agrupar transiciones por par (src, dst) para combinar etiquetas
+        edge_labels = {}
+        for src in self.states:
+            for sym, dests in self.transitions.get(src, {}).items():
+                for dst in dests:
+                    key = (src, dst)
+                    if key not in edge_labels:
+                        edge_labels[key] = []
+                    edge_labels[key].append(sym)
+        
+        # Generar transiciones con etiquetas combinadas
+        for (src, dst), symbols in edge_labels.items():
+            # Combinar símbolos múltiples con comas
+            label = ", ".join(sorted(symbols))
+            
+            # Estilo de la transición
+            if EPSILON in symbols:
+                style = 'style=dashed, color=gray'
+            else:
+                style = 'color=black'
+            
+            lines.append(f'{src} -> {dst} [label="{label}", {style}];')
+        
+        lines.append("}")
+        return "\n".join(lines)
+
 
 __all__ = ["Automaton", "EPSILON"]
