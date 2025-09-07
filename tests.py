@@ -1,8 +1,5 @@
-#!/usr/bin/env python3
 """
-Casos de prueba comprehensivos para el proyecto de autómatas.
-
-Incluye:
+Casos de prueba
 - Pruebas unitarias para cada componente
 - Pruebas de integración
 - Casos extremos y de error
@@ -27,7 +24,7 @@ from src.automaton import Automaton, EPSILON
 
 
 class TestRegexParser(unittest.TestCase):
-    """Pruebas para el parser de expresiones regulares"""
+    """Pruebas para el parser de regex"""
     
     def test_basic_regex(self):
         """Pruebas para regex básicas"""
@@ -72,9 +69,9 @@ class TestRegexParser(unittest.TestCase):
         
         for regex, expected_expansion in test_cases:
             with self.subTest(regex=regex):
-                # La expansión exacta depende de la implementación
+                #la expansión exacta depende de la implementación
                 result = to_postfix(regex)
-                # Verificar que no hay errores
+                #verificar que no hay errores
                 self.assertIsInstance(result, str)
                 self.assertGreater(len(result), 0)
     
@@ -88,7 +85,7 @@ class TestRegexParser(unittest.TestCase):
         for regex, expected_pattern in test_cases:
             with self.subTest(regex=regex):
                 result = to_postfix(regex)
-                # Verificar que la expansión es válida
+                #verificar que la expansión es válida
                 self.assertIsInstance(result, str)
                 self.assertGreater(len(result), 0)
     
@@ -109,16 +106,16 @@ class TestRegexParser(unittest.TestCase):
     def test_validation_errors(self):
         """Pruebas para errores de validación"""
         invalid_cases = [
-            "",  # Vacía
-            ")",  # Paréntesis desbalanceados
-            "(",  # Paréntesis desbalanceados
-            "*",  # Operador al inicio
-            "|",  # Alternancia mal posicionada
-            "a||b",  # Doble alternancia
-            "[",  # Corchete sin cerrar
-            "{",  # Llave sin cerrar
-            "\\",  # Escape al final
-            "\\x",  # Escape inválido
+            "",  #vacía
+            ")",  #paréntesis desbalanceados
+            "(",
+            "*",  #operador al inicio
+            "|",  #alternancia mal posicionada
+            "a||b",  #doble alternancia
+            "[",  #corchete sin cerrar
+            "{",  #llave sin cerrar
+            "\\",  #escape al final
+            "\\x",  #escape inválido
         ]
         
         for invalid_regex in invalid_cases:
@@ -130,7 +127,7 @@ class TestRegexParser(unittest.TestCase):
         """Pruebas para manejo de epsilon"""
         test_cases = [
             ("ε", "ε"),
-            ("e", "ε"),  # Normalización
+            ("e", "ε"),  #normalización
             ("aε", "aε."),
             ("ε|a", "εa|"),
         ]
@@ -167,41 +164,41 @@ class TestThompsonConstruction(unittest.TestCase):
         """Pruebas de estructura del AFN"""
         nfa = postfix_to_nfa("ab.")
         
-        # Verificar que tiene exactamente 4 estados para concatenación simple
+        #verificar que tiene exactamente 4 estados para concatenación simple
         self.assertEqual(len(nfa.states), 4)
         
-        # Verificar estado inicial y de aceptación
+        #verificar estado inicial y de aceptación
         self.assertIsNotNone(nfa.initial)
         self.assertEqual(len(nfa.accepts), 1)
     
     def test_operators(self):
         """Pruebas específicas para cada operador"""
-        # Estrella de Kleene
+        #estrella de kleene
         nfa_star = postfix_to_nfa("a*")
         self.assertTrue(len(nfa_star.states) >= 2)
         
-        # Más
+        #más
         nfa_plus = postfix_to_nfa("a+")
         self.assertTrue(len(nfa_plus.states) >= 2)
         
-        # Opcional
+        #opcional
         nfa_opt = postfix_to_nfa("a?")
         self.assertTrue(len(nfa_opt.states) >= 2)
         
-        # Alternancia
+        #alternancia
         nfa_alt = postfix_to_nfa("ab|")
         self.assertTrue(len(nfa_alt.states) >= 4)
     
     def test_invalid_postfix(self):
         """Pruebas para postfix inválidos"""
         invalid_cases = [
-            "*",    # Operador sin operando
-            "+",    # Operador sin operando
-            "?",    # Operador sin operando
-            ".",    # Concatenación sin segundo operando
-            "|",    # Alternancia sin operandos
-            "ab|.", # Concatenación sin segundo operando después de alternancia
-            "",     # Vacío
+            "*",    #operador sin operando
+            "+",    #operador sin operando
+            "?",    #operador sin operando
+            ".",    #concatenación sin segundo operando
+            "|",    #alternancia sin operandos
+            "ab|.", #concatenación sin segundo operando después de alternancia
+            "",     #vacío
         ]
         
         for invalid_postfix in invalid_cases:
@@ -224,7 +221,7 @@ class TestAutomatonMethods(unittest.TestCase):
     
     def test_epsilon_closure(self):
         """Pruebas para clausura epsilon"""
-        # Añadir transiciones epsilon
+        #añadir transiciones epsilon
         self.nfa.add_transition("q0", EPSILON, "q1")
         
         closure = self.nfa.epsilon_closure(["q0"])
@@ -235,10 +232,10 @@ class TestAutomatonMethods(unittest.TestCase):
         """Pruebas para determinización"""
         dfa = self.nfa.determinize()
         
-        # Verificar que es determinista
+        #verificar que es determinista
         self.assertTrue(dfa.is_dfa())
         
-        # Verificar estructura básica
+        #verificar estructura básica
         self.assertIsNotNone(dfa.initial)
         self.assertGreater(len(dfa.accepts), 0)
     
@@ -246,12 +243,12 @@ class TestAutomatonMethods(unittest.TestCase):
         """Pruebas para simulación de cadenas"""
         dfa = self.nfa.determinize()
         
-        # Cadena aceptada
+        #cadena aceptada
         path, accepted = dfa.simulate_dfa_path("ab")
         self.assertTrue(accepted)
         self.assertGreater(len(path), 2)
         
-        # Cadena rechazada
+        #cadena rechazada
         path, accepted = dfa.simulate_dfa_path("a")
         self.assertFalse(accepted)
     
@@ -259,11 +256,11 @@ class TestAutomatonMethods(unittest.TestCase):
         """Pruebas para etiquetado secuencial"""
         relabeled = self.nfa.relabel_sequential()
         
-        # Verificar que los estados son secuenciales
+        #verificar que los estados son secuenciales
         state_nums = [int(s) for s in relabeled.states]
         self.assertEqual(sorted(state_nums), list(range(len(state_nums))))
         
-        # Verificar que se mantiene la estructura
+        #verificar que se mantiene la estructura
         self.assertEqual(len(relabeled.states), len(self.nfa.states))
         self.assertEqual(len(relabeled.accepts), len(self.nfa.accepts))
 
@@ -273,30 +270,30 @@ class TestHopcroftMinimization(unittest.TestCase):
     
     def test_basic_minimization(self):
         """Pruebas básicas de minimización"""
-        # Crear DFA simple
+        #crear dfa simple
         postfix = "ab."
         nfa = postfix_to_nfa(postfix)
         dfa = nfa.determinize()
         
         minimized = minimize_hopcroft(dfa)
         
-        # Verificar que es DFA válido
+        #verificar que es dfa valido
         self.assertTrue(minimized.is_dfa())
         self.assertIsNotNone(minimized.initial)
         
-        # El resultado debe tener igual o menor número de estados
+        #el resultado debe tener igual o menor n de estados
         self.assertLessEqual(len(minimized.states), len(dfa.states))
     
     def test_minimization_reduces_states(self):
         """Verificar que la minimización reduce estados redundantes"""
-        # Crear DFA con estados redundantes
+        #crear dfa con estados redundantes
         postfix = "a*b."
         nfa = postfix_to_nfa(postfix)
         dfa = nfa.determinize()
         
         minimized = minimize_hopcroft(dfa)
         
-        # Debería reducir el número de estados
+        #debería reducir el n de estados
         self.assertLessEqual(len(minimized.states), len(dfa.states))
 
 
@@ -307,7 +304,7 @@ class TestExporter(unittest.TestCase):
         """Configurar directorio temporal"""
         self.temp_dir = tempfile.mkdtemp()
         
-        # Crear autómata simple para pruebas
+        #crear autómata simple para pruebas
         self.nfa = postfix_to_nfa("ab.")
         self.dfa = self.nfa.determinize()
     
@@ -323,7 +320,7 @@ class TestExporter(unittest.TestCase):
         
         self.assertTrue(os.path.exists(json_path))
         
-        # Verificar contenido JSON
+        #verificar contenido json
         import json
         with open(json_path) as f:
             data = json.load(f)
@@ -339,7 +336,7 @@ class TestExporter(unittest.TestCase):
         
         self.assertTrue(os.path.exists(dot_path))
         
-        # Verificar contenido DOT
+        #verificar contenido dot
         with open(dot_path) as f:
             content = f.read()
         
@@ -350,10 +347,10 @@ class TestExporter(unittest.TestCase):
         """Pruebas para exportación de imágenes"""
         png_path = os.path.join(self.temp_dir, "test.png")
         
-        # Intentar exportar (puede fallar si Graphviz no está instalado)
+        #intentar exportar (puede fallar si graphviz no está instalado)
         success = export_image(self.dfa, png_path)
         
-        # Solo verificar si tuvo éxito
+        #solo verificar si tuvo éxito
         if success:
             self.assertTrue(os.path.exists(png_path))
     
@@ -366,7 +363,7 @@ class TestExporter(unittest.TestCase):
         if success:
             self.assertTrue(os.path.exists(html_path))
             
-            # Verificar contenido HTML
+            #verificar contenido html
             with open(html_path) as f:
                 content = f.read()
             
@@ -381,23 +378,23 @@ class TestIntegration(unittest.TestCase):
         """Prueba del pipeline completo: regex -> AFN -> AFD -> mínimo"""
         regex = "(a|b)*abb"
         
-        # Paso 1: Parser
+        #paso 1: parser
         postfix = to_postfix(regex)
         self.assertIsInstance(postfix, str)
         
-        # Paso 2: AFN
+        #paso 2: afn
         nfa = postfix_to_nfa(postfix)
         self.assertIsInstance(nfa, Automaton)
         
-        # Paso 3: AFD
+        #paso 3: afd
         dfa = nfa.determinize()
         self.assertTrue(dfa.is_dfa())
         
-        # Paso 4: Minimización
+        #paso 4: minimización
         minimized = minimize_hopcroft(dfa)
         self.assertTrue(minimized.is_dfa())
         
-        # Verificar que acepta cadenas correctas
+        #verificar que acepta cadenas correctas
         test_strings = [
             ("abb", True),
             ("aabb", True),
@@ -422,7 +419,7 @@ class TestIntegration(unittest.TestCase):
         
         for regex1, regex2 in equivalent_pairs:
             with self.subTest(regex1=regex1, regex2=regex2):
-                # Construir autómatas
+                #construir autómatas
                 postfix1 = to_postfix(regex1)
                 postfix2 = to_postfix(regex2)
                 
@@ -432,7 +429,7 @@ class TestIntegration(unittest.TestCase):
                 dfa1 = minimize_hopcroft(nfa1.determinize())
                 dfa2 = minimize_hopcroft(nfa2.determinize())
                 
-                # Probar con algunas cadenas
+                #probar con algunas cadenas
                 test_strings = ["", "a", "aa", "aaa", "b"]
                 
                 for test_str in test_strings:
@@ -441,7 +438,7 @@ class TestIntegration(unittest.TestCase):
                         _, acc2 = dfa2.simulate_dfa_path(test_str)
                         self.assertEqual(acc1, acc2, f"Diferencia en cadena '{test_str}'")
                     except ValueError:
-                        # Puede haber símbolos no en el alfabeto
+                        #puede haber símbolos no en el alfabeto
                         pass
 
 
@@ -450,7 +447,7 @@ class TestPerformance(unittest.TestCase):
     
     def test_large_regex_performance(self):
         """Verificar que regex grandes se procesan en tiempo razonable"""
-        # Regex que podría ser problemática
+        #regex que podría ser problemática
         large_regex = "a" * 50 + "*"
         
         start_time = time.time()
@@ -462,12 +459,12 @@ class TestPerformance(unittest.TestCase):
         
         end_time = time.time()
         
-        # Debería completarse en menos de 5 segundos
+        #debería completarse en menos de 5 segundos
         self.assertLess(end_time - start_time, 5.0)
     
     def test_deep_nesting_performance(self):
         """Verificar rendimiento con anidamiento profundo"""
-        # Crear regex con anidamiento profundo pero limitado
+        #crear regex con anidamiento profundo pero limitado
         nested_regex = "(" * 10 + "a" + ")" * 10
         
         start_time = time.time()
@@ -475,14 +472,14 @@ class TestPerformance(unittest.TestCase):
         try:
             postfix = to_postfix(nested_regex)
             nfa = postfix_to_nfa(postfix)
-            # Solo verificar que no se cuelgue
+            #solo verificar que no se cuelgue
         except Exception:
-            # Puede fallar debido a limitaciones, pero no debería colgarse
+            #puede fallar debido a limitaciones, pero no debería colgarse
             pass
         
         end_time = time.time()
         
-        # No debería tomar más de 2 segundos
+        #no debería tomar más de 2 segundos
         self.assertLess(end_time - start_time, 2.0)
 
 
@@ -491,19 +488,19 @@ class TestEdgeCases(unittest.TestCase):
     
     def test_empty_language(self):
         """Pruebas para lenguaje vacío (casos que no deberían aceptar nada)"""
-        # Casos que teóricamente no deberían aceptar ninguna cadena
-        pass  # Implementar según sea necesario
+        #casos que teóricamente no deberían aceptar ninguna cadena
+        pass  #implementar según sea necesario
     
     def test_universal_language(self):
         """Pruebas para lenguaje universal"""
-        # Regex que acepta cualquier cadena sobre el alfabeto
+        #regex que acepta cualquier cadena sobre el alfabeto
         regex = "(a|b)*"
         
         postfix = to_postfix(regex)
         nfa = postfix_to_nfa(postfix)
         dfa = nfa.determinize()
         
-        # Debería aceptar cadenas vacías y cualquier combinación de a y b
+        #debería aceptar cadenas vacías y cualquier combinación de a y b
         test_cases = ["", "a", "b", "ab", "ba", "aaa", "bbb", "abab"]
         
         for test_str in test_cases:
@@ -519,7 +516,7 @@ class TestEdgeCases(unittest.TestCase):
         nfa = postfix_to_nfa(postfix)
         dfa = nfa.determinize()
         
-        # Debería aceptar "", "a", "aa", etc.
+        #debería aceptar "", "a", "aa", etc.
         valid_strings = ["", "a", "aa", "aaa"]
         invalid_strings = ["b", "ab", "ba"]
         
@@ -534,7 +531,7 @@ class TestEdgeCases(unittest.TestCase):
                     path, accepted = dfa.simulate_dfa_path(test_str)
                     self.assertFalse(accepted)
                 except ValueError:
-                    # Símbolo no en alfabeto - comportamiento esperado
+                    #símbolo no en alfabeto - comportamiento esperado
                     pass
 
 
@@ -542,11 +539,11 @@ def run_all_tests():
     """Ejecutar todas las pruebas"""
     print("=== Ejecutando casos de prueba ===\n")
     
-    # Configurar el test runner
+    #configurar el test runner
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
     
-    # Añadir todas las clases de prueba
+    #añadir todas las clases de prueba
     test_classes = [
         TestRegexParser,
         TestThompsonConstruction,
@@ -562,11 +559,11 @@ def run_all_tests():
         tests = loader.loadTestsFromTestCase(test_class)
         suite.addTests(tests)
     
-    # Ejecutar las pruebas
+    #ejecutar las pruebas
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
     
-    # Resumen
+    #resumen
     print(f"\n=== Resumen ===")
     print(f"Pruebas ejecutadas: {result.testsRun}")
     print(f"Fallas: {len(result.failures)}")

@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 from typing import Set, Dict, Optional, Iterable, FrozenSet, List, Tuple
 from functools import lru_cache
 
-# Definimos un símbolo especial para epsilon
 EPSILON = "ε"
 
 @dataclass
@@ -41,7 +40,7 @@ class Automaton:
             initial: Si es estado inicial
         """
         if name in self.states:
-            # Permitir idempotencia
+            #permitir idempotencia
             if accept:
                 self.accepts.add(name)
             if initial:
@@ -49,14 +48,14 @@ class Automaton:
             return
             
         self.states.add(name)
-        self.transitions[name] = {}  # Inicializar directamente
+        self.transitions[name] = {}  #inicializar directamente
         
         if accept:
             self.accepts.add(name)
         if initial:
             self.initial = name
         
-        # Invalidar cache al añadir estado
+        #invalidar cache al añadir estado
         self._epsilon_cache.clear()
 
     def add_transition(self, src: str, symbol: str, dest: str) -> None:
@@ -69,18 +68,18 @@ class Automaton:
             dest: Estado destino
         """
         # Validación mínima para rendimiento
-        if __debug__:  # Solo en modo debug
+        if __debug__:  #solo en modo debug
             if src not in self.states or dest not in self.states:
                 raise ValueError(f"Estado inexistente en la transición: {src} -> {dest}")
         
         if symbol != EPSILON:
             self.alphabet.add(symbol)
             
-        # Usar setdefault es más eficiente que verificar existencia
+        #usar setdefault es más eficiente que verificar existencia
         bucket = self.transitions[src].setdefault(symbol, set())
         bucket.add(dest)
         
-        # Invalidar cache si es transición epsilon
+        #invalidar cache si es transición epsilon
         if symbol == EPSILON:
             self._epsilon_cache.clear()
 
@@ -95,10 +94,10 @@ class Automaton:
         Usa cache para estados individuales.
         """
         if isinstance(states, str):
-            # Caso especial para un solo estado
+            #caso especial para un solo estado
             return self._epsilon_closure_single(states)
         
-        # Para múltiples estados, combinar resultados
+        #para múltiples estados, combinar resultados
         result = set()
         for state in states:
             result.update(self._epsilon_closure_single(state))
@@ -121,7 +120,7 @@ class Automaton:
                     closure.add(next_state)
                     stack.append(next_state)
         
-        # Cache el resultado
+        #cache el resultado
         self._epsilon_cache[state] = closure.copy()
         return closure
         return closure
@@ -159,7 +158,7 @@ class Automaton:
         for ch in input_str:
             dests = self.get_transitions(state, ch)
             if len(dests) != 1:
-                return False  # transición no definida o no determinista
+                return False  #transición no definida o no determinista
             (state,) = tuple(dests)
         return state in self.accepts
 
@@ -169,11 +168,11 @@ class Automaton:
             raise ValueError("Autómata sin estado inicial")
 
         if self.is_deterministic():
-            return self  # Ya es DFA
+            return self  #ya es dfa
 
         start_closure = frozenset(self.epsilon_closure({self.initial}))
         dfa = Automaton()
-        # map conjunto de estados NFA -> nombre estado DFA
+        #map conjunto de estados nfa -> nombre estado dfa
         mapping: Dict[FrozenSet[str], str] = {start_closure: "q0"}
         dfa.add_state("q0", initial=True, accept=any(s in self.accepts for s in start_closure))
 
@@ -183,9 +182,9 @@ class Automaton:
         while pending:
             current_set = pending.pop(0)
             current_name = mapping[current_set]
-            # Recorremos alfabeto explícito (sin epsilon)
+            #recorremos alfabeto explícito (sin epsilon)
             for sym in sorted(self.alphabet):
-                # Calcular movimiento y luego clausura epsilon de cada destino
+                #calcular movimiento y luego clausura epsilon de cada destino
                 move: Set[str] = set()
                 for nfa_state in current_set:
                     for dest in self.get_transitions(nfa_state, sym):
@@ -236,7 +235,7 @@ class Automaton:
         return new
 
     def simulate_dfa_path(self, input_str: str) -> Tuple[List[str], bool]:
-        """Simula (asumiendo DFA) devolviendo la lista de estados visitados (incluye inicial) y aceptación."""
+        """Simula (asumiendo dfa) devolviendo la lista de estados visitados (incluye inicial) y aceptación."""
         if not self.is_deterministic():
             raise ValueError("simulate_dfa_path: requiere DFA")
         if self.initial is None:
@@ -265,7 +264,7 @@ class Automaton:
                 for d in trans:
                     if d not in reachable:
                         stack.append(d)
-        # Filtrar
+        #filtrar
         for s in list(self.states):
             if s not in reachable:
                 self.states.remove(s)
@@ -282,12 +281,12 @@ class Automaton:
         if self.initial is None:
             return False
             
-        # Verificar que no hay transiciones epsilon
+        #verificar que no hay transiciones epsilon
         for state_transitions in self.transitions.values():
             if EPSILON in state_transitions:
                 return False
         
-        # Verificar que cada estado tiene máximo una transición por símbolo
+        #verificar que cada estado tiene máximo una transición por símbolo
         for state_transitions in self.transitions.values():
             for destinations in state_transitions.values():
                 if len(destinations) > 1:
@@ -298,7 +297,7 @@ class Automaton:
     def to_dot(self, name: str = "Automaton") -> str:
         """Genera representación DOT básica del autómata"""
         lines = [f"digraph {name} {{", "rankdir=LR;"]
-        # Estado ficticio para flecha inicial
+        #estado ficticio para flecha inicial
         if self.initial is not None:
             lines.append("__start__ [shape=point];")
         for s in sorted(self.states):
@@ -333,11 +332,11 @@ class Automaton:
             ""
         ]
         
-        # Estado ficticio para flecha inicial con estilo
+        #estado ficticio para flecha inicial con estilo
         if self.initial is not None:
             lines.append("__start__ [shape=point, width=0.1, height=0.1];")
         
-        # Estados con colores y estilos
+        #estados con colores y estilos
         for s in sorted(self.states):
             is_initial = (s == self.initial)
             is_accept = (s in self.accepts)
@@ -363,13 +362,13 @@ class Automaton:
                 f'fontcolor="{fontcolor}", penwidth=2];'
             )
         
-        # Flecha inicial con estilo
+        #flecha inicial con estilo
         if self.initial is not None:
             lines.append(f"__start__ -> {self.initial} [penwidth=2, color=green];")
         
         lines.append("")
         
-        # Agrupar transiciones por par (src, dst) para combinar etiquetas
+        #agrupar transiciones por par (src, dst) para combinar etiquetas
         edge_labels = {}
         for src in self.states:
             for sym, dests in self.transitions.get(src, {}).items():
@@ -379,12 +378,12 @@ class Automaton:
                         edge_labels[key] = []
                     edge_labels[key].append(sym)
         
-        # Generar transiciones con etiquetas combinadas
+        #generar transiciones con etiquetas combinadas
         for (src, dst), symbols in edge_labels.items():
-            # Combinar símbolos múltiples con comas
+            #combinar símbolos múltiples con comas
             label = ", ".join(sorted(symbols))
             
-            # Estilo de la transición
+            #estilo de la transición
             if EPSILON in symbols:
                 style = 'style=dashed, color=gray'
             else:

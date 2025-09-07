@@ -14,7 +14,7 @@ from src.automaton import EPSILON
 def create_parser() -> argparse.ArgumentParser:
     """Crear parser de argumentos de línea de comandos"""
     parser = argparse.ArgumentParser(
-        description="Construcción de autómatas finitos a partir de expresiones regulares",
+        description="Construcción de autómatas finitos a partir de regex",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ejemplos de uso:
@@ -39,20 +39,20 @@ Operadores soportados:
         """
     )
     
-    # Grupo principal
+    #grupo principal
     input_group = parser.add_mutually_exclusive_group()
     input_group.add_argument(
         "-r", "--regex", 
         type=str,
-        help="Expresión regular a procesar"
+        help="Regex a procesar"
     )
     input_group.add_argument(
         "-f", "--file",
         type=str,
-        help="Archivo con expresiones regulares (una por línea)"
+        help="Archivo con regex (una por línea)"
     )
     
-    # Opciones de salida
+    #opciones de salida
     parser.add_argument(
         "-o", "--output",
         type=str,
@@ -75,7 +75,7 @@ Operadores soportados:
         help="Usar formato DOT mejorado con colores"
     )
     
-    # Opciones de simulación
+    #opciones de simulación
     parser.add_argument(
         "-s", "--simulate",
         type=str,
@@ -87,7 +87,7 @@ Operadores soportados:
         help="Generar simulación paso a paso en HTML"
     )
     
-    # Opciones de comportamiento
+    #opciones de comportamiento
     parser.add_argument(
         "--verbose", "-v",
         action="store_true",
@@ -109,7 +109,7 @@ Operadores soportados:
 
 def process_regex(regex: str, args) -> Optional[dict]:
     """
-    Procesar una expresión regular individual.
+    Procesar una regex individual.
     
     Returns:
         Dict con los autómatas generados o None si hay error
@@ -118,22 +118,22 @@ def process_regex(regex: str, args) -> Optional[dict]:
         if not args.quiet:
             print(f"Procesando regex: {regex}")
         
-        # Paso 1: Convertir a postfix
+        #paso 1: convertir a postfix
         postfix = to_postfix(regex)
         if args.verbose:
             print(f"  Postfix: {postfix}")
         
-        # Paso 2: Construir AFN
+        #paso 2: construir AFN
         nfa = postfix_to_nfa(postfix)
         if args.verbose:
             print(f"  AFN: {len(nfa.states)} estados, {len(nfa.accepts)} aceptación")
         
-        # Paso 3: Determinizar
+        #paso 3: determinizar
         dfa = nfa.determinize()
         if args.verbose:
             print(f"  AFD: {len(dfa.states)} estados, {len(dfa.accepts)} aceptación")
         
-        # Paso 4: Minimizar (opcional)
+        #paso 4: minimizar
         if not args.no_minimization:
             dfa_min = minimize_hopcroft(dfa)
             if args.verbose:
@@ -166,16 +166,16 @@ def export_automata(result: dict, args, output_dir: Path) -> None:
     dfa = result['dfa']
     dfa_min = result['dfa_min']
     
-    # Sanitizar nombre de archivo
+    #sanitizar nombre de archivo
     safe_name = "".join(c if c.isalnum() or c in '-_' else '_' for c in regex[:20])
     
     try:
-        # Exportar JSON
+        #exportar JSON
         export_json(nfa, str(output_dir / f"{safe_name}_afn.json"))
         export_json(dfa, str(output_dir / f"{safe_name}_afd.json"))
         export_json(dfa_min, str(output_dir / f"{safe_name}_afd_min.json"))
         
-        # Exportar DOT
+        #exportar DOT
         enhanced = args.enhanced_dot
         export_dot(nfa, str(output_dir / f"{safe_name}_afn.dot"), enhanced=enhanced)
         export_dot(dfa, str(output_dir / f"{safe_name}_afd.dot"), enhanced=enhanced)
@@ -184,33 +184,33 @@ def export_automata(result: dict, args, output_dir: Path) -> None:
         if not args.quiet:
             print(f"  Archivos JSON y DOT exportados para '{regex}'")
         
-        # Exportar imágenes PNG
+        #exportar imágenes PNG
         if not args.no_images:
             images_generated = 0
             
             if export_image(nfa, str(output_dir / f"{safe_name}_afn.png"), enhanced=enhanced):
                 if args.verbose:
-                    print(f"  ✓ Imagen AFN generada: {safe_name}_afn.png")
+                    print(f"  imagen afn generada: {safe_name}_afn.png")
                 images_generated += 1
             else:
                 if args.verbose:
-                    print(f"  ✗ No se pudo generar imagen AFN")
+                    print(f"  no se pudo generar imagen afn")
             
             if export_image(dfa, str(output_dir / f"{safe_name}_afd.png"), enhanced=enhanced):
                 if args.verbose:
-                    print(f"  ✓ Imagen AFD generada: {safe_name}_afd.png")
+                    print(f"  imagen afd generada: {safe_name}_afd.png")
                 images_generated += 1
             else:
                 if args.verbose:
-                    print(f"  ✗ No se pudo generar imagen AFD")
+                    print(f"  no se pudo generar imagen afd")
             
             if export_image(dfa_min, str(output_dir / f"{safe_name}_afd_min.png"), enhanced=enhanced):
                 if args.verbose:
-                    print(f"  ✓ Imagen AFD mínimo generada: {safe_name}_afd_min.png")
+                    print(f"  imagen afd mínimo generada: {safe_name}_afd_min.png")
                 images_generated += 1
             else:
                 if args.verbose:
-                    print(f"  ✗ No se pudo generar imagen AFD mínimo")
+                    print(f"  no se pudo generar imagen afd mínimo")
             
             if images_generated == 0 and not args.quiet:
                 print("  Nota: Para generar imágenes, instala Graphviz:")
@@ -218,22 +218,22 @@ def export_automata(result: dict, args, output_dir: Path) -> None:
                 print("    macOS: brew install graphviz")
                 print("    Windows: https://graphviz.org/download/")
         
-        # Exportar HTML interactivo
+        #exportar HTML interactivo
         if args.html:
             html_path = output_dir / f"{safe_name}_interactive.html"
             if export_interactive_html(dfa_min, str(html_path)):
                 if not args.quiet:
-                    print(f"  ✓ Visualización HTML generada: {html_path.name}")
+                    print(f"  visualización html generada: {html_path.name}")
             else:
                 if args.verbose:
-                    print(f"  ✗ No se pudo generar HTML interactivo")
+                    print(f"  no se pudo generar html interactivo")
         
     except Exception as e:
         print(f"Error exportando '{regex}': {e}", file=sys.stderr)
 
 
 def simulate_strings(result: dict, strings: List[str], args, output_dir: Path) -> None:
-    """Simular cadenas en el AFD mínimo"""
+    """Simular cadenas en el afd mínimo"""
     dfa_min = result['dfa_min']
     regex = result['regex']
     
@@ -246,7 +246,7 @@ def simulate_strings(result: dict, strings: List[str], args, output_dir: Path) -
     
     for string in strings:
         try:
-            # Verificar símbolos válidos
+            #verificar símbolos válidos
             valid_symbols = dfa_min.alphabet | {EPSILON}
             for char in string:
                 if char not in valid_symbols:
@@ -263,7 +263,7 @@ def simulate_strings(result: dict, strings: List[str], args, output_dir: Path) -
             else:
                 print(f"  '{string}': {status} ({' → '.join(path)})")
             
-            # Generar simulación paso a paso en HTML si se solicita
+            #generar simulación paso a paso en HTML si se solicita
             if args.step_by_step:
                 safe_name = "".join(c if c.isalnum() or c in '-_' else '_' for c in regex[:20])
                 safe_string = "".join(c if c.isalnum() or c in '-_' else '_' for c in string)
@@ -271,7 +271,7 @@ def simulate_strings(result: dict, strings: List[str], args, output_dir: Path) -
                 
                 if export_step_by_step_simulation(dfa_min, string, str(html_path)):
                     if args.verbose:
-                        print(f"    ✓ Simulación paso a paso: {html_path.name}")
+                        print(f"    simulación paso a paso: {html_path.name}")
                 
         except Exception as e:
             print(f"  '{string}': Error - {e}")
@@ -294,7 +294,6 @@ def interactive_mode():
             print("Error: Expresión vacía")
             continue
         
-        # Simular argumentos para el modo interactivo
         class Args:
             quiet = False
             verbose = False
@@ -310,7 +309,7 @@ def interactive_mode():
         if not result:
             continue
         
-        # Exportar archivos
+        #exportar archivos
         out_dir = Path("out")
         out_dir.mkdir(exist_ok=True)
         export_automata(result, args, out_dir)
@@ -328,20 +327,20 @@ def interactive_mode():
 
 
 def main():
-    """Función principal mejorada con CLI avanzado"""
+    """fun principal mejorada con cli avanzado"""
     parser = create_parser()
     args = parser.parse_args()
     
-    # Validar argumentos
+    #validar args
     if args.quiet and args.verbose:
         print("Error: --quiet y --verbose son mutuamente excluyentes", file=sys.stderr)
         return 1
     
-    # Crear directorio de salida
+    #crear directorio de salida
     output_dir = Path(args.output)
     output_dir.mkdir(exist_ok=True)
     
-    # Modo interactivo si no se especifica regex ni archivo
+    #modo interactivo si no se especifica regex ni archivo
     if not args.regex and not args.file:
         try:
             interactive_mode()
@@ -350,7 +349,7 @@ def main():
             print("\nPrograma interrumpido por el usuario")
             return 0
     
-    # Recopilar expresiones regulares
+    #recopilar regex
     regexes = []
     
     if args.regex:
@@ -369,10 +368,10 @@ def main():
             return 1
     
     if not regexes:
-        print("Error: No hay expresiones regulares para procesar", file=sys.stderr)
+        print("Error: No hay regex para procesar", file=sys.stderr)
         return 1
     
-    # Procesar cada regex
+    #procesar cada regex
     successful_results = []
     errors = 0
     
@@ -384,7 +383,7 @@ def main():
         else:
             errors += 1
     
-    # Simulación de cadenas
+    #sim de cadenas
     if args.simulate and successful_results:
         strings = [s.strip() for s in args.simulate.split(',') if s.strip()]
         
@@ -394,7 +393,7 @@ def main():
         for result in successful_results:
             simulate_strings(result, strings, args, output_dir)
     
-    # Resumen final
+    #resumen final
     if not args.quiet:
         print(f"\n=== Resumen ===")
         print(f"Regex procesadas: {len(regexes)}")
