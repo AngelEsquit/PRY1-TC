@@ -37,7 +37,7 @@ def validate_regex(regex: str) -> None:
     if len(regex) > 1000:
         raise RegexValidationError("Regex demasiado larga (máximo 1000 caracteres)")
     
-    # Verificar paréntesis balanceados
+    #verificar paréntesis balanceados
     paren_count = 0
     bracket_count = 0
     brace_count = 0
@@ -118,7 +118,7 @@ def _remove_escapes(regex: str) -> str:
     i = 0
     while i < len(regex):
         if regex[i] == '\\' and i + 1 < len(regex):
-            result.append('a')  # Reemplazar escape con símbolo genérico
+            result.append('a')  #reemplazar escape con símbolo genérico
             i += 2
         else:
             result.append(regex[i])
@@ -227,7 +227,7 @@ def expand_quantifiers(regex: str) -> str:
             result.append(regex[i:i+2])
             i += 2
         elif regex[i] == '{':
-            # Encontrar el elemento anterior
+            #encontrar el elemento anterior
             if not result:
                 raise RegexValidationError("Cuantificador sin elemento previo")
             
@@ -379,13 +379,13 @@ def to_postfix(regex: str) -> str:
         raise RegexValidationError("Regex vacía")
     
     try:
-        # Paso 1: Validar sintaxis
+        #paso 1: Validar sintaxis
         validate_regex(regex)
         
-        # Paso 2: Expandir clases de caracteres [abc], [a-z]
+        #paso 2: Expandir clases de caracteres [abc], [a-z]
         regex = expand_character_classes(regex)
         
-        # Paso 3: Expandir cuantificadores {n}, {n,m}
+        #paso 3: Expandir cuantificadores {n}, {n,m}
         regex = expand_quantifiers(regex)
         
         #paso 4: procesar caracteres especiales \n, \t, .
