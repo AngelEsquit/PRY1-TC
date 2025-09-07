@@ -12,32 +12,32 @@ OP_BINARY = {"|", "."}  #usamos "." como operador explicito de concatenacion int
 PRECEDENCE = {"|": 1, ".": 2, "*": 3, "+": 3, "?": 3}
 RIGHT_ASSOC = {"*", "+", "?"}
 
-EPSILON_SYMBOLS = {"ε", "e"}  #se normaliza a "ε"
+EPSILON_SYMBOLS = {"ε"}
 SPECIAL_CHARS = {"|", "*", "+", "?", "(", ")", "[", "]", "{", "}", "\\", "^", "$", ".", "-"}
 VALID_ESCAPE_CHARS = {"n", "t", "r", "\\", "(", ")", "[", "]", "{", "}", "|", "*", "+", "?", ".", "^", "$"}
 
 class RegexValidationError(ValueError):
-    """Excepción específica para errores de validación de regex"""
+    """Excepcion especifica para errores de validacion de regex"""
     pass
 
 
 def validate_regex(regex: str) -> None:
     """
-    Valida que la regex sea sintácticamente correcta antes del procesamiento.
+    Valida que la regex sea sintacticamente correcta antes del procesamiento.
     
     Args:
-        regex: La expresión regular a validar
+        regex: La expresion regular a validar
         
     Raises:
-        RegexValidationError: Si la regex tiene errores sintácticos
+        RegexValidationError: Si la regex tiene errores sintacticos
     """
     if not regex:
-        raise RegexValidationError("Regex vacía")
+        raise RegexValidationError("Regex vacia")
     
     if len(regex) > 1000:
-        raise RegexValidationError("Regex demasiado larga (máximo 1000 caracteres)")
+        raise RegexValidationError("Regex demasiado larga (maximo 1000 caracteres)")
     
-    #verificar paréntesis balanceados
+    #verificar parentesis balanceados
     paren_count = 0
     bracket_count = 0
     brace_count = 0
@@ -52,7 +52,7 @@ def validate_regex(regex: str) -> None:
                 raise RegexValidationError("Backslash al final de regex")
             next_char = regex[i + 1]
             if next_char not in VALID_ESCAPE_CHARS:
-                raise RegexValidationError(f"Escape inválido: \\{next_char}")
+                raise RegexValidationError(f"Escape invalido: \\{next_char}")
             i += 2
             continue
             
@@ -61,7 +61,7 @@ def validate_regex(regex: str) -> None:
         elif char == ')':
             paren_count -= 1
             if paren_count < 0:
-                raise RegexValidationError("Paréntesis desbalanceados: ')' sin '(' correspondiente")
+                raise RegexValidationError("Parentesis desbalanceados: ')' sin '(' correspondiente")
                 
         elif char == '[':
             bracket_count += 1
@@ -80,7 +80,7 @@ def validate_regex(regex: str) -> None:
         i += 1
     
     if paren_count != 0:
-        raise RegexValidationError("Paréntesis desbalanceados: '(' sin ')' correspondiente")
+        raise RegexValidationError("Parentesis desbalanceados: '(' sin ')' correspondiente")
     if bracket_count != 0:
         raise RegexValidationError("Corchetes desbalanceados: '[' sin ']' correspondiente")
     if brace_count != 0:
@@ -91,7 +91,7 @@ def validate_regex(regex: str) -> None:
 
 
 def _validate_operators(regex: str) -> None:
-    """Valida que los operadores estén en posiciones correctas"""
+    """Valida que los operadores esten en posiciones correctas"""
     cleaned_regex = _remove_escapes(regex)
     
     for i, char in enumerate(cleaned_regex):
@@ -101,24 +101,21 @@ def _validate_operators(regex: str) -> None:
             prev_char = cleaned_regex[i-1]
             if prev_char in {'|', '('}:
                 raise RegexValidationError(f"Operador '{char}' despues de '{prev_char}'")
-            #validar operadores unarios consecutivos
-            if prev_char in {'*', '+', '?'}:
-                raise RegexValidationError(f"Operadores unarios consecutivos: '{prev_char}{char}'")
         
         elif char == '|':
             if i == 0 or i == len(cleaned_regex) - 1:
-                raise RegexValidationError("Operador '|' en posición inválida")
+                raise RegexValidationError("Operador '|' en posicion invalida")
             if cleaned_regex[i-1] in {'|', '('} or cleaned_regex[i+1] in {'|', ')'}:
                 raise RegexValidationError("Operador '|' mal posicionado")
 
 
 def _remove_escapes(regex: str) -> str:
-    """Remueve caracteres escapados para validación de operadores"""
+    """Remueve caracteres escapados para validacion de operadores"""
     result = []
     i = 0
     while i < len(regex):
         if regex[i] == '\\' and i + 1 < len(regex):
-            result.append('a')  #reemplazar escape con símbolo genérico
+            result.append('a')  #reemplazar escape con simbolo generico
             i += 2
         else:
             result.append(regex[i])
@@ -171,7 +168,7 @@ def expand_character_classes(regex: str) -> str:
 def _expand_char_class(char_class: str) -> str:
     """Expande una clase de caracteres a alternativas"""
     if not char_class:
-        raise RegexValidationError("Clase de caracteres vacía")
+        raise RegexValidationError("Clase de caracteres vacia")
     
     chars = set()
     i = 0
@@ -189,12 +186,12 @@ def _expand_char_class(char_class: str) -> str:
             else:
                 chars.add(next_char)
             i += 2
-        elif i + 2 < len(char_class) and char_class[i + 1] == '-':
-            #rango de caracteres
+        elif i + 2 <= len(char_class) - 1 and char_class[i + 1] == '-':
+            #rango de caracteres  
             start_char = char_class[i]
             end_char = char_class[i + 2]
             if ord(start_char) > ord(end_char):
-                raise RegexValidationError(f"Rango inválido: {start_char}-{end_char}")
+                raise RegexValidationError(f"Rango invalido: {start_char}-{end_char}")
             
             for code in range(ord(start_char), ord(end_char) + 1):
                 chars.add(chr(code))
@@ -251,12 +248,12 @@ def expand_quantifiers(regex: str) -> str:
 
 
 def _expand_quantifier(preceding: List[str], quantifier: str) -> List[str]:
-    """Expande un cuantificador específico"""
+    """Expande un cuantificador especifico"""
     if ',' in quantifier:
         #{n,m} formato
         parts = quantifier.split(',')
         if len(parts) != 2:
-            raise RegexValidationError(f"Cuantificador inválido: {{{quantifier}}}")
+            raise RegexValidationError(f"Cuantificador invalido: {{{quantifier}}}")
         
         try:
             min_rep = int(parts[0]) if parts[0] else 0
@@ -353,17 +350,17 @@ def process_special_chars(regex: str) -> str:
 
 def to_postfix(regex: str) -> str:
     """
-    Convierte una expresion regular a notacion postfix.
+    Convierte una expresión regular a notación postfix.
     
     Operadores soportados:
     - | (alternancia)
-    - * (cero o mas)
-    - + (uno o mas)  
+    - * (cero o más)
+    - + (uno o más)  
     - ? (cero o uno)
     - () (agrupación)
     - [] (clases de caracteres)
     - {} (repeticiones)
-    - . (cualquier caracter)
+    - . (cualquier carácter)
     - \\\\ (escape)
     
     Args:
@@ -379,13 +376,13 @@ def to_postfix(regex: str) -> str:
         raise RegexValidationError("Regex vacía")
     
     try:
-        #paso 1: Validar sintaxis
+        #paso 1: validar sintaxis
         validate_regex(regex)
         
-        #paso 2: Expandir clases de caracteres [abc], [a-z]
+        #paso 2: expandir clases de caracteres [abc], [a-z]
         regex = expand_character_classes(regex)
         
-        #paso 3: Expandir cuantificadores {n}, {n,m}
+        #paso 3: expandir cuantificadores {n}, {n,m}
         regex = expand_quantifiers(regex)
         
         #paso 4: procesar caracteres especiales \n, \t, .
@@ -393,7 +390,7 @@ def to_postfix(regex: str) -> str:
         
         #paso 5: verificar caracteres validos despues del procesamiento
         for char in regex:
-            if not (char.isalnum() or char in "|*+?()εe \n\t\r\\"):
+            if not (char.isalnum() or char in "|*+?()εe \n\t\r\\."):
                 raise RegexValidationError(f"Caracter no valido: '{char}'")
         
         #paso 6: tokenizar
@@ -426,7 +423,7 @@ def to_postfix(regex: str) -> str:
                 while stack and stack[-1] != "(":
                     output.append(stack.pop())
                 if not stack:
-                    raise RegexValidationError("Paréntesis desbalanceados: ')' sin '(' correspondiente")
+                    raise RegexValidationError("Parentesis desbalanceados: ')' sin '(' correspondiente")
                 stack.pop()
             elif t in PRECEDENCE:
                 while stack and stack[-1] != "(" and (
@@ -446,12 +443,12 @@ def to_postfix(regex: str) -> str:
         while stack:
             op = stack.pop()
             if op in {"(", ")"}:
-                raise RegexValidationError("Paréntesis desbalanceados: '(' sin ')' correspondiente")
+                raise RegexValidationError("Parentesis desbalanceados: '(' sin ')' correspondiente")
             output.append(op)
         
         result = "".join(output)
         if not result:
-            raise RegexValidationError("Regex inválida: resultado vacío")
+            raise RegexValidationError("Regex invalida: resultado vacio")
         
         return result
         
