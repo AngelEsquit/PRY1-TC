@@ -3,16 +3,16 @@ from typing import List, Set
 import re
 import string
 
-# Operadores soportados: | alternancia, concatenación implícita, * estrella, + uno o más, () agrupación
-# ? cero o una vez, . cualquier carácter, [] clases de caracteres, {} repeticiones
-# Se convierte a postfix (notación inversa polaca) usando Shunting Yard adaptado para concatenación implícita.
+#operadores soportados: | alternancia, concatenacion implicita, * estrella, + uno o mas, () agrupacion
+#? cero o una vez, . cualquier caracter, [] clases de caracteres, {} repeticiones
+#se convierte a postfix (notacion inversa polaca) usando shunting yard adaptado para concatenacion implicita.
 
 OP_UNARY = {"*", "+", "?"}
-OP_BINARY = {"|", "."}  # usamos "." como operador explícito de concatenación interno
+OP_BINARY = {"|", "."}  #usamos "." como operador explicito de concatenacion interno
 PRECEDENCE = {"|": 1, ".": 2, "*": 3, "+": 3, "?": 3}
 RIGHT_ASSOC = {"*", "+", "?"}
 
-EPSILON_SYMBOLS = {"ε", "e"}  # se normaliza a "ε"
+EPSILON_SYMBOLS = {"ε", "e"}  #se normaliza a "ε"
 SPECIAL_CHARS = {"|", "*", "+", "?", "(", ")", "[", "]", "{", "}", "\\", "^", "$", ".", "-"}
 VALID_ESCAPE_CHARS = {"n", "t", "r", "\\", "(", ")", "[", "]", "{", "}", "|", "*", "+", "?", ".", "^", "$"}
 
@@ -47,7 +47,7 @@ def validate_regex(regex: str) -> None:
         char = regex[i]
         
         if char == '\\':
-            # Verificar escape válido
+            #verificar escape valido
             if i + 1 >= len(regex):
                 raise RegexValidationError("Backslash al final de regex")
             next_char = regex[i + 1]
@@ -86,7 +86,7 @@ def validate_regex(regex: str) -> None:
     if brace_count != 0:
         raise RegexValidationError("Llaves desbalanceadas: '{' sin '}' correspondiente")
     
-    # Verificar operadores válidos
+    #verificar operadores validos
     _validate_operators(regex)
 
 
@@ -100,7 +100,10 @@ def _validate_operators(regex: str) -> None:
                 raise RegexValidationError(f"Operador '{char}' al inicio de regex")
             prev_char = cleaned_regex[i-1]
             if prev_char in {'|', '('}:
-                raise RegexValidationError(f"Operador '{char}' después de '{prev_char}'")
+                raise RegexValidationError(f"Operador '{char}' despues de '{prev_char}'")
+            #validar operadores unarios consecutivos
+            if prev_char in {'*', '+', '?'}:
+                raise RegexValidationError(f"Operadores unarios consecutivos: '{prev_char}{char}'")
         
         elif char == '|':
             if i == 0 or i == len(cleaned_regex) - 1:
@@ -138,11 +141,11 @@ def expand_character_classes(regex: str) -> str:
     
     while i < len(regex):
         if regex[i] == '\\' and i + 1 < len(regex):
-            # Manejar escape
+            #manejar escape
             result.append(regex[i:i+2])
             i += 2
         elif regex[i] == '[':
-            # Encontrar el cierre del corchete
+            #encontrar el cierre del corchete
             j = i + 1
             while j < len(regex) and regex[j] != ']':
                 if regex[j] == '\\':
@@ -153,7 +156,7 @@ def expand_character_classes(regex: str) -> str:
             if j >= len(regex):
                 raise RegexValidationError("Clase de caracteres sin cerrar")
             
-            # Expandir la clase
+            #expandir la clase
             char_class = regex[i+1:j]
             expanded = _expand_char_class(char_class)
             result.append(f"({expanded})")
@@ -175,7 +178,7 @@ def _expand_char_class(char_class: str) -> str:
     
     while i < len(char_class):
         if char_class[i] == '\\' and i + 1 < len(char_class):
-            # Caracter escapado
+            #caracter escapado
             next_char = char_class[i + 1]
             if next_char == 'n':
                 chars.add('\n')
@@ -187,7 +190,7 @@ def _expand_char_class(char_class: str) -> str:
                 chars.add(next_char)
             i += 2
         elif i + 2 < len(char_class) and char_class[i + 1] == '-':
-            # Rango de caracteres
+            #rango de caracteres
             start_char = char_class[i]
             end_char = char_class[i + 2]
             if ord(start_char) > ord(end_char):
@@ -201,20 +204,20 @@ def _expand_char_class(char_class: str) -> str:
             i += 1
     
     if not chars:
-        raise RegexValidationError("Clase de caracteres vacía después de expansión")
+        raise RegexValidationError("Clase de caracteres vacia despues de expansion")
     
     return '|'.join(sorted(chars))
 
 
 def expand_quantifiers(regex: str) -> str:
     """
-    Expande cuantificadores {n}, {n,m} a repeticiones explícitas.
+    Expande cuantificadores {n}, {n,m} a repeticiones explicitas.
     
     Args:
         regex: Regex con posibles cuantificadores
         
     Returns:
-        Regex expandida sin cuantificadores de repetición
+        Regex expandida sin cuantificadores de repeticion
     """
     result = []
     i = 0
@@ -228,7 +231,7 @@ def expand_quantifiers(regex: str) -> str:
             if not result:
                 raise RegexValidationError("Cuantificador sin elemento previo")
             
-            # Encontrar el cierre de la llave
+            #encontrar el cierre de la llave
             j = i + 1
             while j < len(regex) and regex[j] != '}':
                 j += 1
@@ -250,32 +253,32 @@ def expand_quantifiers(regex: str) -> str:
 def _expand_quantifier(preceding: List[str], quantifier: str) -> List[str]:
     """Expande un cuantificador específico"""
     if ',' in quantifier:
-        # {n,m} formato
+        #{n,m} formato
         parts = quantifier.split(',')
         if len(parts) != 2:
             raise RegexValidationError(f"Cuantificador inválido: {{{quantifier}}}")
         
         try:
             min_rep = int(parts[0]) if parts[0] else 0
-            max_rep = int(parts[1]) if parts[1] else min_rep + 5  # Límite arbitrario
+            max_rep = int(parts[1]) if parts[1] else min_rep + 5  #limite arbitrario
         except ValueError:
-            raise RegexValidationError(f"Cuantificador inválido: {{{quantifier}}}")
+            raise RegexValidationError(f"Cuantificador invalido: {{{quantifier}}}")
     else:
-        # {n} formato
+        #{n} formato
         try:
             min_rep = max_rep = int(quantifier)
         except ValueError:
-            raise RegexValidationError(f"Cuantificador inválido: {{{quantifier}}}")
+            raise RegexValidationError(f"Cuantificador invalido: {{{quantifier}}}")
     
     if min_rep < 0 or max_rep < 0 or min_rep > max_rep:
-        raise RegexValidationError(f"Cuantificador inválido: {{{quantifier}}}")
+        raise RegexValidationError(f"Cuantificador invalido: {{{quantifier}}}")
     
-    if max_rep > 20:  # Límite para evitar explosión exponencial
-        raise RegexValidationError("Cuantificador demasiado grande (máximo 20)")
+    if max_rep > 20:  #limite para evitar explosion exponencial
+        raise RegexValidationError("Cuantificador demasiado grande (maximo 20)")
     
-    # Tomar el último elemento o grupo
+    #tomar el ultimo elemento o grupo
     if preceding and preceding[-1] == ')':
-        # Buscar el grupo completo
+        #buscar el grupo completo
         paren_count = 1
         start = len(preceding) - 2
         while start >= 0 and paren_count > 0:
@@ -288,17 +291,17 @@ def _expand_quantifier(preceding: List[str], quantifier: str) -> List[str]:
         element = ''.join(preceding[start:])
         result = preceding[:start]
     else:
-        # Tomar el último carácter
+        #tomar el ultimo caracter
         element = preceding[-1] if preceding else ''
         result = preceding[:-1] if preceding else []
     
-    # Expandir el cuantificador
+    #expandir el cuantificador
     if min_rep == max_rep:
-        # Repetición exacta
+        #repeticion exacta
         for _ in range(min_rep):
             result.append(element)
     else:
-        # Rango de repeticiones - usar ? para hacer opcionales
+        #rango de repeticiones - usar ? para hacer opcionales
         for i in range(min_rep):
             result.append(element)
         for i in range(max_rep - min_rep):
@@ -337,7 +340,7 @@ def process_special_chars(regex: str) -> str:
                 result.append(next_char)
             i += 2
         elif regex[i] == '.':
-            # Punto = cualquier carácter (simplificado a letras y dígitos)
+            #punto = cualquier caracter (simplificado a letras y digitos)
             any_char = '|'.join(string.ascii_letters + string.digits)
             result.append(f"({any_char})")
             i += 1
@@ -350,17 +353,17 @@ def process_special_chars(regex: str) -> str:
 
 def to_postfix(regex: str) -> str:
     """
-    Convierte una expresión regular a notación postfix.
+    Convierte una expresion regular a notacion postfix.
     
     Operadores soportados:
     - | (alternancia)
-    - * (cero o más)
-    - + (uno o más)  
+    - * (cero o mas)
+    - + (uno o mas)  
     - ? (cero o uno)
     - () (agrupación)
     - [] (clases de caracteres)
     - {} (repeticiones)
-    - . (cualquier carácter)
+    - . (cualquier caracter)
     - \\\\ (escape)
     
     Args:
@@ -385,15 +388,15 @@ def to_postfix(regex: str) -> str:
         # Paso 3: Expandir cuantificadores {n}, {n,m}
         regex = expand_quantifiers(regex)
         
-        # Paso 4: Procesar caracteres especiales \n, \t, .
+        #paso 4: procesar caracteres especiales \n, \t, .
         regex = process_special_chars(regex)
         
-        # Paso 5: Verificar caracteres válidos después del procesamiento
+        #paso 5: verificar caracteres validos despues del procesamiento
         for char in regex:
             if not (char.isalnum() or char in "|*+?()εe \n\t\r\\"):
-                raise RegexValidationError(f"Carácter no válido: '{char}'")
+                raise RegexValidationError(f"Caracter no valido: '{char}'")
         
-        # Paso 6: Tokenizar
+        #paso 6: tokenizar
         regex = regex.replace(" ", "")
         tokens: List[str] = []
         i = 0
@@ -402,7 +405,7 @@ def to_postfix(regex: str) -> str:
             tokens.append(c)
             i += 1
             
-        # Paso 7: Insertar operadores de concatenación explícitos
+        #paso 7: insertar operadores de concatenacion explicitos
         augmented: List[str] = []
         for idx, t in enumerate(tokens):
             augmented.append(t)
@@ -412,7 +415,7 @@ def to_postfix(regex: str) -> str:
                     (a in {"*", "+", "?", ")"} and b not in {"|", ")", "*", "+", "?"})):
                     augmented.append(".")
         
-        # Paso 8: Algoritmo Shunting Yard
+        #paso 8: algoritmo shunting yard
         output: List[str] = []
         stack: List[str] = []
         
@@ -434,7 +437,7 @@ def to_postfix(regex: str) -> str:
                     output.append(stack.pop())
                 stack.append(t)
             else:
-                # Símbolo (incluyendo ε)
+                #simbolo (incluyendo ε)
                 if t in EPSILON_SYMBOLS:
                     output.append("ε")
                 else:
