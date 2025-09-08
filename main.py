@@ -166,68 +166,97 @@ def export_automata(result: dict, args, output_dir: Path) -> None:
     dfa = result['dfa']
     dfa_min = result['dfa_min']
     
-    #sanitizar nombre de archivo
-    safe_name = "".join(c if c.isalnum() or c in '-_' else '_' for c in regex[:20])
+    # Sanitizar nombre para carpeta: mantener paréntesis, eliminar puntos y otros caracteres problemáticos
+    def sanitize_folder_name(s: str, maxlen: int = 40) -> str:
+        replacements = {
+            '*': '_STAR_',
+            '+': '_PLUS_',
+            '?': '_Q_',
+            '|': '_OR_',
+            '.': '_DOT_',
+            '[': '_LB_',
+            ']': '_RB_',
+            '{': '_LCB_',
+            '}': '_RCB_',
+            '^': '_CARET_',
+            '$': '_DOLLAR_',
+            '\\': '_BSLASH_',
+            '/': '_SLASH_',
+            ' ': '_',
+        }
+        allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_()")
+        result = []
+        for c in s:
+            if c in allowed:
+                result.append(c)
+            elif c in replacements:
+                result.append(replacements[c])
+            else:
+                result.append('_')
+        return ''.join(result)[:maxlen]
+
+    safe_name = sanitize_folder_name(regex)
+    regex_dir = output_dir / safe_name
+    regex_dir.mkdir(exist_ok=True)
     
     try:
-        #exportar JSON
-        export_json(nfa, str(output_dir / f"{safe_name}_afn.json"))
-        export_json(dfa, str(output_dir / f"{safe_name}_afd.json"))
-        export_json(dfa_min, str(output_dir / f"{safe_name}_afd_min.json"))
-        
-        #exportar DOT
+        # Exportar JSON
+        export_json(nfa, str(regex_dir / "afn.json"))
+        export_json(dfa, str(regex_dir / "afd.json"))
+        export_json(dfa_min, str(regex_dir / "afd_min.json"))
+
+        # Exportar DOT
         enhanced = args.enhanced_dot
-        export_dot(nfa, str(output_dir / f"{safe_name}_afn.dot"), enhanced=enhanced)
-        export_dot(dfa, str(output_dir / f"{safe_name}_afd.dot"), enhanced=enhanced)
-        export_dot(dfa_min, str(output_dir / f"{safe_name}_afd_min.dot"), enhanced=enhanced)
-        
+        export_dot(nfa, str(regex_dir / "afn.dot"), enhanced=enhanced)
+        export_dot(dfa, str(regex_dir / "afd.dot"), enhanced=enhanced)
+        export_dot(dfa_min, str(regex_dir / "afd_min.dot"), enhanced=enhanced)
+
         if not args.quiet:
-            print(f"  Archivos JSON y DOT exportados para '{regex}'")
-        
-        #exportar imágenes PNG
+            print(f"  Archivos JSON y DOT exportados para '{regex}' en '{regex_dir}'")
+
+        # Exportar imágenes PNG
+        images_generated = 0
         if not args.no_images:
-            images_generated = 0
-            
-            if export_image(nfa, str(output_dir / f"{safe_name}_afn.png"), enhanced=enhanced):
+            if export_image(nfa, str(regex_dir / "afn.png"), enhanced=enhanced):
                 if args.verbose:
-                    print(f"  imagen afn generada: {safe_name}_afn.png")
+                    print(f"  imagen afn generada: {safe_name}/afn.png")
                 images_generated += 1
             else:
                 if args.verbose:
                     print(f"  no se pudo generar imagen afn")
-            
-            if export_image(dfa, str(output_dir / f"{safe_name}_afd.png"), enhanced=enhanced):
+
+            if export_image(dfa, str(regex_dir / "afd.png"), enhanced=enhanced):
                 if args.verbose:
-                    print(f"  imagen afd generada: {safe_name}_afd.png")
+                    print(f"  imagen afd generada: {safe_name}/afd.png")
                 images_generated += 1
             else:
                 if args.verbose:
                     print(f"  no se pudo generar imagen afd")
-            
-            if export_image(dfa_min, str(output_dir / f"{safe_name}_afd_min.png"), enhanced=enhanced):
+
+            if export_image(dfa_min, str(regex_dir / "afd_min.png"), enhanced=enhanced):
                 if args.verbose:
-                    print(f"  imagen afd mínimo generada: {safe_name}_afd_min.png")
+                    print(f"  imagen afd mínimo generada: {safe_name}/afd_min.png")
                 images_generated += 1
             else:
                 if args.verbose:
                     print(f"  no se pudo generar imagen afd mínimo")
-            
-            if images_generated == 0 and not args.quiet:
-                print("  Nota: Para generar imágenes, instala Graphviz:")
-                print("    Ubuntu/Debian: sudo apt-get install graphviz")
-                print("    macOS: brew install graphviz")
-                print("    Windows: https://graphviz.org/download/")
-        
-        #exportar HTML interactivo
+
+        if images_generated == 0 and not args.quiet:
+            print("  Nota: Para generar imágenes, instala Graphviz:")
+            print("    Ubuntu/Debian: sudo apt-get install graphviz")
+            print("    macOS: brew install graphviz")
+            print("    Windows: https://graphviz.org/download/")
+
+        # Exportar HTML interactivo
         if args.html:
-            html_path = output_dir / f"{safe_name}_interactive.html"
+            html_path = regex_dir / "interactive.html"
             if export_interactive_html(dfa_min, str(html_path)):
                 if not args.quiet:
                     print(f"  visualización html generada: {html_path.name}")
             else:
                 if args.verbose:
                     print(f"  no se pudo generar html interactivo")
-        
+
     except Exception as e:
         print(f"Error exportando '{regex}': {e}", file=sys.stderr)
 

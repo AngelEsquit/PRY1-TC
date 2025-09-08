@@ -178,6 +178,10 @@ class Automaton:
 
         pending: List[FrozenSet[str]] = [start_closure]
         used_names = 1
+        
+        # Estado de absorción (vacío) para transiciones indefinidas
+        dead_state_name = None
+        empty_set = frozenset()
 
         while pending:
             current_set = pending.pop(0)
@@ -189,18 +193,31 @@ class Automaton:
                 for nfa_state in current_set:
                     for dest in self.get_transitions(nfa_state, sym):
                         move.update(self.epsilon_closure({dest}))
+                
                 if not move:
-                    continue
-                frozen = frozenset(move)
-                if frozen not in mapping:
-                    new_name = f"q{used_names}"
-                    used_names += 1
-                    mapping[frozen] = new_name
-                    dfa.add_state(new_name, accept=any(s in self.accepts for s in frozen))
-                    pending.append(frozen)
-                dfa_src = current_name
-                dfa_dst = mapping[frozen]
-                dfa.add_transition(dfa_src, sym, dfa_dst)
+                    # No hay transición definida, debe ir al estado de absorción
+                    if dead_state_name is None:
+                        dead_state_name = f"q{used_names}"
+                        used_names += 1
+                        mapping[empty_set] = dead_state_name
+                        dfa.add_state(dead_state_name, accept=False)
+                    dfa.add_transition(current_name, sym, dead_state_name)
+                else:
+                    frozen = frozenset(move)
+                    if frozen not in mapping:
+                        new_name = f"q{used_names}"
+                        used_names += 1
+                        mapping[frozen] = new_name
+                        dfa.add_state(new_name, accept=any(s in self.accepts for s in frozen))
+                        pending.append(frozen)
+                    dfa_src = current_name
+                    dfa_dst = mapping[frozen]
+                    dfa.add_transition(dfa_src, sym, dfa_dst)
+        
+        # Agregar transiciones del estado de absorción hacia sí mismo para todos los símbolos
+        if dead_state_name is not None:
+            for sym in sorted(self.alphabet):
+                dfa.add_transition(dead_state_name, sym, dead_state_name)
 
         return dfa
 
@@ -288,10 +305,41 @@ class Automaton:
         
         #verificar que cada estado tiene máximo una transición por símbolo
         for state_transitions in self.transitions.values():
-            for destinations in state_transitions.values():
-                if len(destinations) > 1:
+            for dests in state_transitions.values():
+                if len(dests) > 1:
                     return False
         
+        return True
+
+    def is_dead_state(self, state: str) -> bool:
+        """
+        Verifica si un estado es un estado de absorción (muerto).
+        Un estado muerto es aquel que:
+        1. No es estado de aceptación
+        2. Tiene transiciones hacia sí mismo para todos los símbolos del alfabeto
+        3. No sale hacia otros estados
+        
+        Returns:
+            True si es un estado de absorción
+        """
+        if state in self.accepts:
+            return False
+            
+        if state not in self.states:
+            return False
+            
+        state_transitions = self.transitions.get(state, {})
+        
+        # Verificar que tiene transiciones para todos los símbolos del alfabeto
+        if not self.alphabet.issubset(state_transitions.keys()):
+            return False
+            
+        # Verificar que todas las transiciones van hacia sí mismo
+        for symbol in self.alphabet:
+            destinations = state_transitions.get(symbol, set())
+            if len(destinations) != 1 or state not in destinations:
+                return False
+                
         return True
 
     def to_dot(self, name: str = "Automaton") -> str:
@@ -340,11 +388,16 @@ class Automaton:
         for s in sorted(self.states):
             is_initial = (s == self.initial)
             is_accept = (s in self.accepts)
+            is_dead = self.is_dead_state(s)
             
             if is_accept:
                 shape = "doublecircle"
                 color = "lightcoral"
                 fontcolor = "darkred"
+            elif is_dead:
+                shape = "circle"
+                color = "yellow"
+                fontcolor = "black"
             else:
                 shape = "circle"
                 color = "lightblue"

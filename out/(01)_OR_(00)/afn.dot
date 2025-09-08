@@ -1,0 +1,30 @@
+digraph Automaton {
+rankdir=LR;
+bgcolor=white;
+node [fontname="Arial", fontsize=12];
+edge [fontname="Arial", fontsize=10];
+
+__start__ [shape=point, width=0.1, height=0.1];
+s0 [shape=circle, style=filled, fillcolor="lightblue", fontcolor="darkblue", penwidth=2];
+s1 [shape=circle, style=filled, fillcolor="lightblue", fontcolor="darkblue", penwidth=2];
+s2 [shape=circle, style=filled, fillcolor="lightblue", fontcolor="darkblue", penwidth=2];
+s3 [shape=circle, style=filled, fillcolor="lightblue", fontcolor="darkblue", penwidth=2];
+s4 [shape=circle, style=filled, fillcolor="lightblue", fontcolor="darkblue", penwidth=2];
+s5 [shape=circle, style=filled, fillcolor="lightblue", fontcolor="darkblue", penwidth=2];
+s6 [shape=circle, style=filled, fillcolor="lightblue", fontcolor="darkblue", penwidth=2];
+s7 [shape=circle, style=filled, fillcolor="lightblue", fontcolor="darkblue", penwidth=2];
+s8 [shape=circle, style=filled, fillcolor="lightgreen", fontcolor="darkgreen", penwidth=2];
+s9 [shape=doublecircle, style=filled, fillcolor="lightcoral", fontcolor="darkred", penwidth=2];
+__start__ -> s8 [penwidth=2, color=green];
+
+s4 -> s5 [label="0", color=black];
+s7 -> s9 [label="ε", style=dashed, color=gray];
+s6 -> s7 [label="0", color=black];
+s2 -> s3 [label="1", color=black];
+s5 -> s6 [label="ε", style=dashed, color=gray];
+s1 -> s2 [label="ε", style=dashed, color=gray];
+s0 -> s1 [label="0", color=black];
+s8 -> s0 [label="ε", style=dashed, color=gray];
+s8 -> s4 [label="ε", style=dashed, color=gray];
+s3 -> s9 [label="ε", style=dashed, color=gray];
+}

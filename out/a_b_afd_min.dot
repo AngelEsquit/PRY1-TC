@@ -1,9 +1,0 @@
-digraph Automaton {
-rankdir=LR;
-__start__ [shape=point];
-m0 [shape=doublecircle];
-q0 [shape=circle];
-__start__ -> q0;
-q0 -> m0 [label="a"]; 
-q0 -> m0 [label="b"]; 
-}
