@@ -314,7 +314,8 @@ def interactive_mode():
     print("Símbolos: letras, dígitos, ε (épsilon)")
     print("Para ayuda detallada: python main.py --help")
     print()
-    
+    print("Nota: Para simular la cadena vacía ingrese 'ε' o 'epsilon'.")
+    print()
     while True:
         regex = input("Ingrese regex r (o 'quit' para salir): ").strip()
         if regex.lower() in ['quit', 'exit', 'q']:
@@ -351,7 +352,9 @@ def interactive_mode():
             w = input("Cadena a simular (vacío para nueva regex): ")
             if w == "":
                 break
-            
+            # Interpretar 'ε' o 'epsilon' como cadena vacía real
+            if w == EPSILON or w.lower() == 'epsilon':
+                w = ""  # cadena vacía
             simulate_strings(result, [w], args, out_dir)
 
 
